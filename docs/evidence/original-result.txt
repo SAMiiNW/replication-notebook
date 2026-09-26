@@ -1,0 +1,2 @@
+ORIGINAL RESULT R9
+The protocol was followed for ten deterministic runs. Median recovery time: 100 milliseconds.

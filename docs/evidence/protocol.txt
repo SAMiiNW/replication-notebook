@@ -1,0 +1,2 @@
+RECOVERY ROUTINE R9
+Measure median recovery time across ten deterministic runs. Report the integer result in milliseconds. A reproduction is within tolerance when its median differs by no more than five percent from the original.

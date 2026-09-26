@@ -1,0 +1,2 @@
+AUDIT RERUN R9-B
+The published protocol was followed for ten deterministic runs. Median recovery time: 104 milliseconds.
