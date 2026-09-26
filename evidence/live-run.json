@@ -1,0 +1,14 @@
+{
+  "studyId": "RN-LIVE-1790461254",
+  "finalState": "FINAL",
+  "finalOutcome": "REPRODUCED",
+  "originalValue": 100,
+  "reproductionValue": 103,
+  "auditValue": 104,
+  "transactions": {
+    "open": "0x5011f379e2965a76e62e3181418d97f3107927286310f0bdd6e2c1ae72069e42",
+    "replicate": "0xc0ba94cb5310ba31a539fc0670e57214e1c9759a41264457da04773570f9fdf5",
+    "audit": "0x669b1c69c303df1753f3c524e5546bb5b99f1ed20cdadb9799320fe3cb5934dd"
+  },
+  "verification": "Every transaction finalized with MAJORITY_AGREE and leader SUCCESS."
+}
