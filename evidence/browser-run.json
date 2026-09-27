@@ -1,0 +1,21 @@
+{
+  "network": "GenLayer StudioNet",
+  "publicSite": "https://samiinw-replication-notebook.pages.dev/",
+  "frontendRevision": "aa146cb",
+  "contract": "0x15ba04f276568e7735A701533fFd4972Ed71d09a",
+  "studyId": "RN-WEB-1790470055082",
+  "result": {
+    "state": "FINAL",
+    "outcome": "REPRODUCED",
+    "originalValue": 100,
+    "reproductionValue": 103,
+    "auditValue": 104
+  },
+  "transactions": {
+    "open": "0x586d5904405763c1e656ffefb1ab2cf42f1005e1ffceda562934993069075088",
+    "rerun": "0x1a7239f34364f91909ef8fab48b78dc82ec6ad23a25f6b33d41ecba1f63b3d17",
+    "audit": "0x76a43189acfe89405ee8330750e37bb84e854ec5cdb4d9f822b7097dc6decfe5"
+  },
+  "transactionVerification": "All three transactions were read back from StudioNet as finalized, accepted, MAJORITY_AGREE, with leader execution SUCCESS.",
+  "browserVerification": "The public Cloudflare build created three temporary role accounts, completed the lifecycle, read canonical contract state, and displayed DEMO FINALIZED."
+}

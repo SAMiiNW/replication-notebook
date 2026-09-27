@@ -39,6 +39,12 @@ gltest tests/direct -v
 - Contract: `0x15ba04f276568e7735A701533fFd4972Ed71d09a`
 - Deployment transaction: `0x87cb7dc8a138020d51fa51bc7f85f24302305fdf874d0970d8ef10723da1ee0b`
 - Verified study: `RN-LIVE-1790461254` (`FINAL / REPRODUCED` after three finalized transactions)
+- Public-browser study: `RN-WEB-1790470055082` (`FINAL / REPRODUCED` after three finalized transactions)
+- Browser evidence: [`evidence/browser-run.json`](evidence/browser-run.json)
 - Public notebook: https://samiinw-replication-notebook.pages.dev/
 
 The deployed source is the contract at commit `84aa5358886af10823b11d1b734faaa810b65356`.
+
+## Reviewer path
+
+Open the public notebook and choose **RUN REVIEW DEMO**. The page creates three temporary, session-only StudioNet accounts for the author, rerunner, and auditor. It opens a fresh study, submits the independent rerun, submits the audit, waits for `FINALIZED` plus `MAJORITY_AGREE` at every step, and reads the canonical `FINAL / REPRODUCED` record back into the notebook. No private key is stored or published.
