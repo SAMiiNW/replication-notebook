@@ -1,6 +1,587 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Replication Notebook</title><style>
-:root{--paper:#f3eddc;--ink:#17233d;--red:#b83939;--blue:#56749e;--rule:#b9c7d8}*{box-sizing:border-box}body{margin:0;background:#cbc5b7;color:var(--ink);font-family:Georgia,serif}button,input,textarea{font:inherit}.desk{max-width:1100px;margin:0 auto;padding:35px 24px}.binding{background:var(--paper);box-shadow:8px 12px 0 #8f8a7e;min-height:85vh;position:relative;padding:45px 7vw 70px;background-image:linear-gradient(90deg,transparent 78px,#d97b7b 79px,transparent 80px),repeating-linear-gradient(var(--paper) 0,var(--paper) 31px,var(--rule) 32px)}.holes{position:absolute;left:22px;top:30px;bottom:30px;display:flex;flex-direction:column;justify-content:space-around}.holes i{display:block;width:20px;height:20px;border-radius:50%;background:#aaa59a;box-shadow:inset 2px 2px 3px #69665f}.folio{display:flex;justify-content:space-between;align-items:start}.folio small{font:12px monospace}.connect{border:2px solid var(--ink);background:transparent;padding:9px 14px}.binding h1{font-size:clamp(3.5rem,9vw,8rem);line-height:.85;margin:60px 0 24px;letter-spacing:-.06em}.intro{font-size:1.25rem;max-width:680px;line-height:1.65}.margin-note{color:var(--red);font:italic 16px cursive;transform:rotate(-3deg);margin:35px 0}.steps{display:flex;gap:12px;flex-wrap:wrap}.steps button{background:transparent;border:0;border-bottom:3px solid var(--ink);padding:8px 4px;font-weight:bold}.steps .demo{color:var(--red);border-color:var(--red)}.steps button:disabled{opacity:.5}.sheet{margin-top:30px;background:#fffdf5aa;padding:26px;border:1px solid #b8b1a1}.reader{display:flex;gap:8px}.reader input{flex:1;min-width:0;padding:10px;border:0;border-bottom:2px solid}.reader button,.primary{background:var(--ink);color:white;border:0;padding:11px 16px}.plot{height:90px;position:relative;margin:25px 0}.axis{position:absolute;left:0;right:0;top:46px;height:2px;background:var(--ink)}.axis:before,.axis:after{position:absolute;top:-18px;font:12px monospace}.axis:before{content:'ORIGINAL';left:12%}.axis:after{content:'RERUN';right:12%}.dot{position:absolute;top:36px;width:20px;height:20px;border-radius:50%;background:var(--red);left:50%;transition:.4s}pre{white-space:pre-wrap;font:13px/1.5 monospace;min-height:130px}.drawer{position:fixed;inset:0 0 0 auto;width:min(600px,100%);background:var(--paper);padding:35px;transform:translateX(105%);transition:.3s;overflow:auto;z-index:8}.drawer.open{transform:none}.close{float:right}.field{display:grid;gap:5px;margin:12px 0}.field input,.field textarea{padding:10px;border:0;border-bottom:2px solid var(--ink);background:#fffdf5}.field textarea{min-height:90px}.status{font:12px monospace}@media(max-width:650px){.binding{padding-left:95px}.binding h1{font-size:3.8rem}}
-</style></head><body><main class="desk"><article class="binding"><div class="holes"><i></i><i></i><i></i><i></i></div><header class="folio"><small>NOTEBOOK / GENLAYER STUDIONET</small><button class="connect" id="connect">CONNECT</button></header><h1>Run it again.</h1><p class="intro">A published number enters on page one. A rerunner writes the next number. An auditor gets a fresh challenge window before the notebook closes.</p><p class="margin-note">Do not trust the caption. Pin the pages and compare the measurement.</p><nav class="steps"><button id="openStudy">01 OPEN STUDY</button><button id="replicate">02 ADD RERUN</button><button id="challenge">03 AUDIT</button><button id="resolve">04 RESOLVE CONTEST</button><button id="finalize">CLOSE UNCHALLENGED</button><button class="demo" id="demo">RUN REVIEW DEMO</button></nav><section class="sheet"><div class="reader"><input id="active" placeholder="STUDY ID"><button id="read">READ PAGE</button></div><div class="plot"><div class="axis"></div><i class="dot" id="dot"></i></div><p class="status" id="status">STUDIONET / CONTRACT LIVE</p><pre id="output">NO STUDY LOADED</pre></section></article></main>
-<aside class="drawer" id="openDrawer"><button class="close">CLOSE</button><h2>Page one: freeze the baseline</h2><form id="openForm"><div class="field"><label>Study ID</label><input id="studyId" required></div><div class="field"><label>Rerunner wallet</label><input id="rerunner" required></div><div class="field"><label>Auditor wallet</label><input id="auditor" required></div><div class="field"><label>Claim</label><textarea id="claim" required></textarea></div><div class="field"><label>Metric</label><input id="metric" required></div><div class="field"><label>Tolerance basis points</label><input id="tolerance" type="number" value="500" required></div><div class="field"><label>Protocol URL</label><input id="protocol" type="url" required></div><div class="field"><label>Original result URL</label><input id="original" type="url" required></div><div class="field"><label>Challenge seconds</label><input id="window" type="number" value="3600" required></div><button class="primary">OPEN NOTEBOOK</button></form></aside>
-<aside class="drawer" id="artifactDrawer"><button class="close">CLOSE</button><h2 id="artifactTitle">Attach rerun page</h2><form id="artifactForm"><div class="field"><label>Public artifact URL</label><input id="artifact" type="url" required></div><button class="primary">ADD PAGE</button></form></aside>
-<script type="module">import{createAccount,createClient}from'https://esm.sh/genlayer-js@1.1.8';import{studionet}from'https://esm.sh/genlayer-js@1.1.8/chains';const ADDRESS='0x15ba04f276568e7735A701533fFd4972Ed71d09a',ENDPOINT='https://studio.genlayer.com/api',$=s=>document.querySelector(s);let client,artifactMethod='submit_replication';const setStatus=x=>$('#status').textContent=x,show=x=>$('#output').textContent=JSON.stringify(x,(_,v)=>typeof v==='bigint'?v.toString():v,2);async function connect(){if(!window.ethereum)throw Error('Install MetaMask or Rabby to use your own wallet.');const[a]=await ethereum.request({method:'eth_requestAccounts'});client=createClient({chain:studionet,endpoint:ENDPOINT,account:a,provider:ethereum});setStatus('WALLET CONNECTED')}async function read(){if(!client)await connect();const x=await client.readContract({address:ADDRESS,functionName:'get_study',args:[$('#active').value.trim()]});show(x);if(x.original_value){const delta=Math.max(-40,Math.min(40,(Number(x.reproduction_value)-Number(x.original_value))/Math.max(Math.abs(Number(x.original_value)),1)*100));$('#dot').style.left=(50+delta)+'%'}return x}async function send(signer,functionName,args,onProgress=setStatus){onProgress('SUBMITTED: '+functionName);const hash=await signer.writeContract({address:ADDRESS,functionName,args,value:0n});onProgress('WAITING FOR FINALIZED: '+hash);const receipt=await signer.waitForTransactionReceipt({hash,status:'FINALIZED',retries:180,interval:5000}),agreement=String(receipt.result_name??receipt.resultName??'').toUpperCase();if(agreement!=='MAJORITY_AGREE')throw Error('FINALIZED WITHOUT AGREEMENT: '+(agreement||'UNKNOWN'));return hash}async function write(functionName,args){if(!client)await connect();const hash=await send(client,functionName,args);setStatus('FINALIZED '+hash);await read()}async function runDemo(){const button=$('#demo'),id='RN-WEB-'+Date.now(),accounts=[createAccount(),createAccount(),createAccount()],clients=accounts.map(account=>createClient({chain:studionet,endpoint:ENDPOINT,account})),urls={protocol:'https://raw.githubusercontent.com/SAMiiNW/replication-notebook/84aa5358886af10823b11d1b734faaa810b65356/docs/evidence/protocol.txt',original:'https://samiinw-replication-notebook.pages.dev/evidence/original-result.txt',reproduction:'https://cdn.jsdelivr.net/gh/SAMiiNW/replication-notebook@84aa5358886af10823b11d1b734faaa810b65356/docs/evidence/reproduction.txt',audit:'https://github.com/SAMiiNW/replication-notebook/raw/84aa5358886af10823b11d1b734faaa810b65356/docs/evidence/audit-rerun.txt'},transactions={};button.disabled=true;$('#active').value=id;client=clients[0];const progress=x=>{setStatus(x);show({studyId:id,phase:x,transactions})};try{transactions.open=await send(clients[0],'open_study',[id,accounts[1].address,accounts[2].address,'The deterministic recovery routine remains within five percent of the published median recovery time.','median recovery time',500,urls.protocol,urls.original,3600],progress);transactions.rerun=await send(clients[1],'submit_replication',[id,urls.reproduction],progress);transactions.audit=await send(clients[2],'challenge_replication',[id,urls.audit],progress);const result=await read();if(result.state!=='FINAL'||result.final_outcome!=='REPRODUCED')throw Error('UNEXPECTED FINAL STATE');setStatus('DEMO FINALIZED');show({studyId:id,state:result.state,outcome:result.final_outcome,originalValue:result.original_value,reproductionValue:result.reproduction_value,auditValue:result.challenge_value,transactions});}catch(error){setStatus('DEMO FAILED');show({studyId:id,error:error.message||String(error),transactions});throw error}finally{button.disabled=false}}const open=id=>$(id).classList.add('open'),close=()=>document.querySelectorAll('.drawer').forEach(x=>x.classList.remove('open'));$('#connect').onclick=()=>connect().catch(e=>{setStatus('CONNECT FAILED');show({error:e.message||String(e)})});$('#openStudy').onclick=()=>open('#openDrawer');$('#replicate').onclick=()=>{artifactMethod='submit_replication';$('#artifactTitle').textContent='Attach rerun page';open('#artifactDrawer')};$('#challenge').onclick=()=>{artifactMethod='challenge_replication';$('#artifactTitle').textContent='Attach audit page';open('#artifactDrawer')};document.querySelectorAll('.close').forEach(x=>x.onclick=close);$('#read').onclick=()=>read().catch(e=>show({error:e.message||String(e)}));$('#resolve').onclick=()=>write('resolve_contest',[$('#active').value]);$('#finalize').onclick=()=>write('finalize_unchallenged',[$('#active').value]);$('#demo').onclick=()=>runDemo().catch(()=>{});$('#openForm').onsubmit=e=>{e.preventDefault();const id=$('#studyId').value;$('#active').value=id;write('open_study',[id,$('#rerunner').value,$('#auditor').value,$('#claim').value,$('#metric').value,Number($('#tolerance').value),$('#protocol').value,$('#original').value,Number($('#window').value)]).then(close)};$('#artifactForm').onsubmit=e=>{e.preventDefault();write(artifactMethod,[$('#active').value,$('#artifact').value]).then(close)};</script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Replication Notebook</title>
+    <style>
+      :root {
+        --paper: #f3eddc;
+        --ink: #17233d;
+        --red: #b83939;
+        --blue: #56749e;
+        --rule: #b9c7d8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #cbc5b7;
+        color: var(--ink);
+        font-family: Georgia, serif;
+      }
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+      .desk {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 35px 24px;
+      }
+      .binding {
+        background: var(--paper);
+        box-shadow: 8px 12px 0 #8f8a7e;
+        min-height: 85vh;
+        position: relative;
+        padding: 45px 7vw 70px;
+        background-image:
+          linear-gradient(
+            90deg,
+            transparent 78px,
+            #d97b7b 79px,
+            transparent 80px
+          ),
+          repeating-linear-gradient(
+            var(--paper) 0,
+            var(--paper) 31px,
+            var(--rule) 32px
+          );
+      }
+      .holes {
+        position: absolute;
+        left: 22px;
+        top: 30px;
+        bottom: 30px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+      }
+      .holes i {
+        display: block;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #aaa59a;
+        box-shadow: inset 2px 2px 3px #69665f;
+      }
+      .folio {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+      }
+      .folio small {
+        font: 12px monospace;
+      }
+      .connect {
+        border: 2px solid var(--ink);
+        background: transparent;
+        padding: 9px 14px;
+      }
+      .binding h1 {
+        font-size: clamp(3.5rem, 9vw, 8rem);
+        line-height: 0.85;
+        margin: 60px 0 24px;
+        letter-spacing: -0.06em;
+      }
+      .intro {
+        font-size: 1.25rem;
+        max-width: 680px;
+        line-height: 1.65;
+      }
+      .margin-note {
+        color: var(--red);
+        font: italic 16px cursive;
+        transform: rotate(-3deg);
+        margin: 35px 0;
+      }
+      .steps {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .steps button {
+        background: transparent;
+        border: 0;
+        border-bottom: 3px solid var(--ink);
+        padding: 8px 4px;
+        font-weight: bold;
+      }
+      .steps .demo {
+        color: var(--red);
+        border-color: var(--red);
+      }
+      .steps button:disabled {
+        opacity: 0.5;
+      }
+      .sheet {
+        margin-top: 30px;
+        background: #fffdf5aa;
+        padding: 26px;
+        border: 1px solid #b8b1a1;
+      }
+      .reader {
+        display: flex;
+        gap: 8px;
+      }
+      .reader input {
+        flex: 1;
+        min-width: 0;
+        padding: 10px;
+        border: 0;
+        border-bottom: 2px solid;
+      }
+      .reader button,
+      .primary {
+        background: var(--ink);
+        color: white;
+        border: 0;
+        padding: 11px 16px;
+      }
+      .plot {
+        height: 90px;
+        position: relative;
+        margin: 25px 0;
+      }
+      .axis {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 46px;
+        height: 2px;
+        background: var(--ink);
+      }
+      .axis:before,
+      .axis:after {
+        position: absolute;
+        top: -18px;
+        font: 12px monospace;
+      }
+      .axis:before {
+        content: "ORIGINAL";
+        left: 12%;
+      }
+      .axis:after {
+        content: "RERUN";
+        right: 12%;
+      }
+      .dot {
+        position: absolute;
+        top: 36px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--red);
+        left: 50%;
+        transition: 0.4s;
+      }
+      pre {
+        white-space: pre-wrap;
+        font: 13px/1.5 monospace;
+        min-height: 130px;
+      }
+      .drawer {
+        position: fixed;
+        inset: 0 0 0 auto;
+        width: min(600px, 100%);
+        background: var(--paper);
+        padding: 35px;
+        transform: translateX(105%);
+        transition: 0.3s;
+        overflow: auto;
+        z-index: 8;
+      }
+      .drawer.open {
+        transform: none;
+      }
+      .close {
+        float: right;
+      }
+      .field {
+        display: grid;
+        gap: 5px;
+        margin: 12px 0;
+      }
+      .field input,
+      .field textarea {
+        padding: 10px;
+        border: 0;
+        border-bottom: 2px solid var(--ink);
+        background: #fffdf5;
+      }
+      .field textarea {
+        min-height: 90px;
+      }
+      .status {
+        font: 12px monospace;
+      }
+      @media (max-width: 650px) {
+        .binding {
+          padding-left: 95px;
+        }
+        .binding h1 {
+          font-size: 3.8rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="desk">
+      <article class="binding">
+        <div class="holes"><i></i><i></i><i></i><i></i></div>
+        <header class="folio">
+          <small>NOTEBOOK / GENLAYER STUDIONET</small
+          ><button class="connect" id="connect">CONNECT</button>
+        </header>
+        <h1>Run it again.</h1>
+        <p class="intro">
+          A published number enters on page one. A rerunner writes the next
+          number. An auditor gets a fresh challenge window before the notebook
+          closes.
+        </p>
+        <p class="margin-note">
+          Do not trust the caption. Pin the pages and compare the measurement.
+        </p>
+        <nav class="steps">
+          <button id="openStudy">01 OPEN STUDY</button
+          ><button id="replicate">02 ADD RERUN</button
+          ><button id="challenge">03 AUDIT</button
+          ><button id="resolve">04 RESOLVE CONTEST</button
+          ><button id="finalize">CLOSE UNCHALLENGED</button
+          ><button class="demo" id="demo">RUN REVIEW DEMO</button>
+        </nav>
+        <section class="sheet">
+          <div class="reader">
+            <input id="active" placeholder="STUDY ID" /><button id="read">
+              READ PAGE
+            </button>
+          </div>
+          <div class="plot">
+            <div class="axis"></div>
+            <i class="dot" id="dot"></i>
+          </div>
+          <p class="status" id="status">STUDIONET / CONTRACT LIVE</p>
+          <pre id="output">NO STUDY LOADED</pre>
+        </section>
+      </article>
+    </main>
+    <aside class="drawer" id="openDrawer">
+      <button class="close">CLOSE</button>
+      <h2>Page one: freeze the baseline</h2>
+      <form id="openForm">
+        <div class="field">
+          <label>Study ID</label><input id="studyId" required />
+        </div>
+        <div class="field">
+          <label>Rerunner wallet</label><input id="rerunner" required />
+        </div>
+        <div class="field">
+          <label>Auditor wallet</label><input id="auditor" required />
+        </div>
+        <div class="field">
+          <label>Claim</label><textarea id="claim" required></textarea>
+        </div>
+        <div class="field">
+          <label>Metric</label><input id="metric" required />
+        </div>
+        <div class="field">
+          <label>Tolerance basis points</label
+          ><input id="tolerance" type="number" value="500" required />
+        </div>
+        <div class="field">
+          <label>Protocol URL</label><input id="protocol" type="url" required />
+        </div>
+        <div class="field">
+          <label>Original result URL</label
+          ><input id="original" type="url" required />
+        </div>
+        <div class="field">
+          <label>Challenge seconds</label
+          ><input id="window" type="number" value="3600" required />
+        </div>
+        <button class="primary">OPEN NOTEBOOK</button>
+      </form>
+    </aside>
+    <aside class="drawer" id="artifactDrawer">
+      <button class="close">CLOSE</button>
+      <h2 id="artifactTitle">Attach rerun page</h2>
+      <form id="artifactForm">
+        <div class="field">
+          <label>Public artifact URL</label
+          ><input id="artifact" type="url" required />
+        </div>
+        <button class="primary">ADD PAGE</button>
+      </form>
+    </aside>
+    <script type="module">
+      import {
+        createAccount,
+        createClient,
+      } from "https://esm.sh/genlayer-js@1.1.8";
+      import { studionet } from "https://esm.sh/genlayer-js@1.1.8/chains";
+      const ADDRESS = "0x15ba04f276568e7735A701533fFd4972Ed71d09a",
+        ENDPOINT = "https://studio.genlayer.com/api",
+        $ = (s) => document.querySelector(s);
+      let client,
+        artifactMethod = "submit_replication";
+      const setStatus = (x) => ($("#status").textContent = x),
+        show = (x) =>
+          ($("#output").textContent = JSON.stringify(
+            x,
+            (_, v) => (typeof v === "bigint" ? v.toString() : v),
+            2,
+          ));
+      async function connect() {
+        if (!window.ethereum)
+          throw Error("Install MetaMask or Rabby to use your own wallet.");
+        const [a] = await ethereum.request({ method: "eth_requestAccounts" });
+        client = createClient({
+          chain: studionet,
+          endpoint: ENDPOINT,
+          account: a,
+          provider: ethereum,
+        });
+        setStatus("WALLET CONNECTED");
+      }
+      async function read() {
+        if (!client) await connect();
+        const x = await client.readContract({
+          address: ADDRESS,
+          functionName: "get_study",
+          args: [$("#active").value.trim()],
+        });
+        show(x);
+        if (x.original_value) {
+          const delta = Math.max(
+            -40,
+            Math.min(
+              40,
+              ((Number(x.reproduction_value) - Number(x.original_value)) /
+                Math.max(Math.abs(Number(x.original_value)), 1)) *
+                100,
+            ),
+          );
+          $("#dot").style.left = 50 + delta + "%";
+        }
+        return x;
+      }
+      async function send(
+        signer,
+        functionName,
+        args,
+        onProgress = setStatus,
+        maxAttempts = 1,
+      ) {
+        let lastError;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          try {
+            onProgress(
+              `SUBMITTING ${functionName} · ATTEMPT ${attempt}/${maxAttempts}`,
+            );
+            const hash = await signer.writeContract({
+              address: ADDRESS,
+              functionName,
+              args,
+              value: 0n,
+            });
+            onProgress("WAITING FOR FINALIZED: " + hash);
+            const receipt = await signer.waitForTransactionReceipt({
+                hash,
+                status: "FINALIZED",
+                retries: 180,
+                interval: 5000,
+              }),
+              agreement = String(
+                receipt.resultName ?? receipt.result_name ?? "",
+              ).toUpperCase(),
+              topExecution = String(
+                receipt.txExecutionResultName ??
+                  receipt.tx_execution_result_name ??
+                  "",
+              ).toUpperCase(),
+              rawLeaderReceipts =
+                receipt.consensus_data?.leader_receipt ??
+                receipt.consensusData?.leaderReceipt ??
+                [],
+              leaderReceipts = Array.isArray(rawLeaderReceipts)
+                ? rawLeaderReceipts
+                : [rawLeaderReceipts],
+              leaderExecutions = leaderReceipts.map((item) =>
+                String(
+                  item.execution_result ?? item.executionResult ?? "",
+                ).toUpperCase(),
+              ),
+              executed =
+                ["FINISHED_WITH_RETURN", "SUCCESS"].includes(topExecution) ||
+                leaderExecutions.some((value) =>
+                  ["FINISHED_WITH_RETURN", "SUCCESS"].includes(value),
+                ),
+              executionLabel =
+                topExecution || leaderExecutions.filter(Boolean).join(",") || "UNKNOWN";
+            if (agreement !== "MAJORITY_AGREE")
+              throw Error(
+                "FINALIZED WITHOUT AGREEMENT: " + (agreement || "UNKNOWN"),
+              );
+            if (!executed)
+              throw Error(
+                "FINALIZED WITH EXECUTION FAILURE: " + executionLabel,
+              );
+            onProgress("FINALIZED + EXECUTED: " + hash);
+            return hash;
+          } catch (error) {
+            lastError = error;
+            if (attempt < maxAttempts) {
+              onProgress(
+                `RETRYING ${functionName}: ${error.message || String(error)}`,
+              );
+              continue;
+            }
+            throw error;
+          }
+        }
+        throw lastError;
+      }
+      async function write(functionName, args) {
+        if (!client) await connect();
+        const hash = await send(client, functionName, args);
+        setStatus("FINALIZED + EXECUTED " + hash);
+        await read();
+      }
+      async function runDemo() {
+        const button = $("#demo"),
+          id = "RN-WEB-" + Date.now(),
+          accounts = [createAccount(), createAccount(), createAccount()],
+          clients = accounts.map((account) =>
+            createClient({ chain: studionet, endpoint: ENDPOINT, account }),
+          ),
+          urls = {
+            protocol:
+              "https://raw.githubusercontent.com/SAMiiNW/replication-notebook/84aa5358886af10823b11d1b734faaa810b65356/docs/evidence/protocol.txt",
+            original:
+              "https://samiinw-replication-notebook.pages.dev/evidence/original-result.txt",
+            reproduction:
+              "https://cdn.jsdelivr.net/gh/SAMiiNW/replication-notebook@84aa5358886af10823b11d1b734faaa810b65356/docs/evidence/reproduction.txt",
+            audit:
+              "https://github.com/SAMiiNW/replication-notebook/raw/84aa5358886af10823b11d1b734faaa810b65356/docs/evidence/audit-rerun.txt",
+          },
+          transactions = {};
+        button.disabled = true;
+        $("#active").value = id;
+        client = clients[0];
+        const progress = (x) => {
+          setStatus(x);
+          show({ studyId: id, phase: x, transactions });
+        };
+        try {
+          transactions.open = await send(
+            clients[0],
+            "open_study",
+            [
+              id,
+              accounts[1].address,
+              accounts[2].address,
+              "The deterministic recovery routine remains within five percent of the published median recovery time.",
+              "median recovery time",
+              500,
+              urls.protocol,
+              urls.original,
+              3600,
+            ],
+            progress,
+            2,
+          );
+          transactions.rerun = await send(
+            clients[1],
+            "submit_replication",
+            [id, urls.reproduction],
+            progress,
+            2,
+          );
+          transactions.audit = await send(
+            clients[2],
+            "challenge_replication",
+            [id, urls.audit],
+            progress,
+            2,
+          );
+          const result = await read();
+          if (result.state !== "FINAL" || result.final_outcome !== "REPRODUCED")
+            throw Error("UNEXPECTED FINAL STATE");
+          setStatus("DEMO FINALIZED");
+          show({
+            studyId: id,
+            state: result.state,
+            outcome: result.final_outcome,
+            originalValue: result.original_value,
+            reproductionValue: result.reproduction_value,
+            auditValue: result.challenge_value,
+            transactions,
+          });
+        } catch (error) {
+          setStatus("DEMO FAILED");
+          show({
+            studyId: id,
+            error: error.message || String(error),
+            transactions,
+          });
+          throw error;
+        } finally {
+          button.disabled = false;
+        }
+      }
+      const open = (id) => $(id).classList.add("open"),
+        close = () =>
+          document
+            .querySelectorAll(".drawer")
+            .forEach((x) => x.classList.remove("open"));
+      $("#connect").onclick = () =>
+        connect().catch((e) => {
+          setStatus("CONNECT FAILED");
+          show({ error: e.message || String(e) });
+        });
+      $("#openStudy").onclick = () => open("#openDrawer");
+      $("#replicate").onclick = () => {
+        artifactMethod = "submit_replication";
+        $("#artifactTitle").textContent = "Attach rerun page";
+        open("#artifactDrawer");
+      };
+      $("#challenge").onclick = () => {
+        artifactMethod = "challenge_replication";
+        $("#artifactTitle").textContent = "Attach audit page";
+        open("#artifactDrawer");
+      };
+      document.querySelectorAll(".close").forEach((x) => (x.onclick = close));
+      $("#read").onclick = () =>
+        read().catch((e) => show({ error: e.message || String(e) }));
+      $("#resolve").onclick = () =>
+        write("resolve_contest", [$("#active").value]);
+      $("#finalize").onclick = () =>
+        write("finalize_unchallenged", [$("#active").value]);
+      $("#demo").onclick = () => runDemo().catch(() => {});
+      $("#openForm").onsubmit = (e) => {
+        e.preventDefault();
+        const id = $("#studyId").value;
+        $("#active").value = id;
+        write("open_study", [
+          id,
+          $("#rerunner").value,
+          $("#auditor").value,
+          $("#claim").value,
+          $("#metric").value,
+          Number($("#tolerance").value),
+          $("#protocol").value,
+          $("#original").value,
+          Number($("#window").value),
+        ]).then(close);
+      };
+      $("#artifactForm").onsubmit = (e) => {
+        e.preventDefault();
+        write(artifactMethod, [$("#active").value, $("#artifact").value]).then(
+          close,
+        );
+      };
+    </script>
+  </body>
+</html>

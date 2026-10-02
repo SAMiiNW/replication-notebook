@@ -3,9 +3,15 @@ CONTRACT=Path('contracts/contract.py').read_text(encoding='utf-8'); SITE=Path('d
 def test_contract_and_interface_surface():
     for name in ('open_study','submit_replication','challenge_replication','resolve_contest','finalize_unchallenged','get_study'):
         assert 'def '+name in CONTRACT and name in SITE
-    assert "status:'FINALIZED'" in SITE and '0x15ba04f276568e7735A701533fFd4972Ed71d09a' in SITE
+    assert 'status: "FINALIZED"' in SITE and '0x15ba04f276568e7735A701533fFd4972Ed71d09a' in SITE
     assert 'challenge_deadline = now()' in CONTRACT and 'supporting_indexes' in CONTRACT
-    assert 'RUN REVIEW DEMO' in SITE and 'createAccount,createClient' in SITE
-    assert 'receipt.result_name??receipt.resultName' in SITE
-    assert "result.state!=='FINAL'" in SITE and "result.final_outcome!=='REPRODUCED'" in SITE
+    assert 'RUN REVIEW DEMO' in SITE and 'createAccount' in SITE and 'createClient' in SITE
+    assert 'receipt.resultName ?? receipt.result_name' in SITE
+    assert 'receipt.txExecutionResultName' in SITE and 'receipt.tx_execution_result_name' in SITE
+    assert 'receipt.consensus_data?.leader_receipt' in SITE
+    assert 'item.execution_result ?? item.executionResult' in SITE
+    assert '"FINISHED_WITH_RETURN", "SUCCESS"' in SITE and 'if (!executed)' in SITE
+    assert 'maxAttempts = 1' in SITE and 'progress,\n            2' in SITE
+    assert 'RETRYING ${functionName}' in SITE
+    assert 'result.state !== "FINAL"' in SITE and 'result.final_outcome !== "REPRODUCED"' in SITE
     assert SITE.count('createAccount()') == 3
